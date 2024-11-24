@@ -15,10 +15,39 @@ const BluetoothScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
 
+  const requestPermissions = async () => {
+    try {
+      // Request Bluetooth permissions
+      const permissionStatus = await navigator.permissions.query({ name: 'bluetooth' as PermissionName });
+      
+      if (permissionStatus.state === 'denied') {
+        throw new Error('Bluetooth permission denied');
+      }
+
+      // Request location permission (required for Android)
+      if ('geolocation' in navigator) {
+        await navigator.geolocation.getCurrentPosition(() => {});
+      }
+
+      return true;
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Permission Error",
+        description: "Please enable Bluetooth and Location permissions",
+      });
+      return false;
+    }
+  };
+
   const startScanning = async () => {
     try {
       setIsScanning(true);
       setDevices([]);
+
+      // Check permissions first
+      const hasPermissions = await requestPermissions();
+      if (!hasPermissions) return;
 
       if (!navigator.bluetooth) {
         throw new Error("Bluetooth not supported");
